@@ -40,7 +40,7 @@
  
 ### Soal 4
 - [a. Shared Memory](#a-shared-memory)
-- [b. ]
+- [b. Register Login](#b-register-login)
 - [c. ]
 - [d. ]
 - [e. ]
@@ -83,3 +83,33 @@ if (shm_fd1 < 0 || shm_fd2 < 0) {
 }
 ```
 Code ini menggunakan shared memory yang telah dijalankan pada system.c. Jika shared memory belum dibuat, maka `shm_open()` akan gagal dan memunculkan message "Run system first.".
+
+## b. Register Login
+```
+#define MAX_HUNTERS 100
+const char *SHM_HUNTER = "/hunter_shm";
+const char *SEM_NAME = "/hunter_sem";
+
+typedef struct {
+    char name[50];
+    int level, exp, atk, hp, def;
+    int banned;
+    char key[50];
+} Hunter;
+
+Hunter *hunters;
+sem_t *sem;
+```
+Pada code berikut mendefinisikan atribut hunter seperti name, level, exp, atk, hp, def, banned, dan key. Shared memory untuk hunter di deklarasikan dengan `/hunter_shm` . 
+
+```
+hunters = mmap(NULL, sizeof(Hunter) * MAX_HUNTERS, PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd1, 0);
+dungeons = mmap(NULL, sizeof(Dungeon) * MAX_DUNGEONS, PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd2, 0);
+sem = sem_open(SEM_NAME, 0);
+}
+```
+Shared memory di-map ke memori proses menggunakan `mmap` untuk mengisi data hunter. 
+
+
+
+
