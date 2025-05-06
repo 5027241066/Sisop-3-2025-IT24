@@ -82,3 +82,4 @@ if (shm_fd1 < 0 || shm_fd2 < 0) {
     exit(1);
 }
 ```
+Code ini menggunakan shared memory yang telah dijalankan pada system.c. Jika shared memory belum dibuat, maka `shm_open()` akan gagal dan memunculkan message "Run system first.".
