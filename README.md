@@ -47,8 +47,10 @@
 - [f. Dungeon List (Hunter Menu)](#f-dungeon-list-hunter-menu)
 - [g. Dungeon Raid & Level Up](#g-dungeon-raid--level-up)
 - [h. Hunter's Battle (Revised)](#h-hunters-battle-revised)
-- [k. ]
-- [l. ]
+- [i. Ban & Unban Hunter](#i-ban--unban-hunter)
+- [j. Reset Hunter](#j-reset-hunter)
+- [k. Notification](#k-notification)
+- [l. Shutdown Server](#l-shutdown-server)
 
 # Soal 1
 
@@ -367,4 +369,106 @@ Hunter *opponent = &hunters[target_index];
     }
 ```
 Setalah memilih musuh akan muncul message “Fighting against xxx”. Jika kita lebih kuat dalam segala aspek dari musuh maka kita akan menang dan muncul message “You Win!” dan user hunter lawan akan dihapus dari shared memory. Jika kita kalah dari lawan maka akan muncul message “You Lose!” dan “Eliminated!” kemudian user kita akan dihapus dari shared memory. 
+
+## i. Ban & Unban Hunter
+```
+typedef struct {
+    int id;
+    char name[64];
+    int atk, def, hp, exp, level;
+    int banned; // 0 = tidak dibanned, 1 = dibanned
+} Hunter;
+```
+Pada code berikut init awal adahal 0 untuk banned berarti hunter active, jika 1 maka hunter dibanned.
+
+### Ban
+```
+void ban_hunter(int hunter_id) {
+    sem_wait(&sem_hunter); // lock akses shared memory hunter
+
+    for (int i = 0; i < MAX_HUNTERS; i++) {
+        if (hunters[i].id == hunter_id) {
+            hunters[i].banned = 1;
+            printf("Hunter %s telah dibanned.\n", hunters[i].name);
+            break;
+        }
+    }
+    sem_post(&sem_hunter); // unlock akses hunter
+}
+```
+Ketika dijalankan dan ditemukan hunter dengan ID yang sesuai `(hunters[i].id == hunter_id)`, maka field banned pada data hunter tersebut diset menjadi `1`, yang berarti hunter tersebut dibanned. Program memunculkan message bahwa hunter telah dibanned. `break` digunakan untuk menghentikan perulangan karena hunter sudah ditemukan.
+
+### Unban
+```
+void unban_hunter(int hunter_id) {
+    sem_wait(&sem_hunter);
+
+    for (int i = 0; i < MAX_HUNTERS; i++) {
+        if (hunters[i].id == hunter_id) {
+            hunters[i].banned = 0;
+            printf("Hunter %s telah di-unban.\n", hunters[i].name);
+            break;
+        }
+    }
+    sem_post(&sem_hunter);
+}
+```
+Ketika dijalankan dan ditemukan hunter dengan ID yang sesuai `(hunters[i].id == hunter_id)`, maka field banned pada data hunter tersebut diset menjadi `0` kembali, yang berarti hunter tersebut telah di unban. Program memunculkan message bahwa hunter telah unban. `break` digunakan untuk menghentikan perulangan karena hunter sudah ditemukan.
+
+## j. Reset Hunter
+```
+void reset_hunter() {
+    char key[50];
+    printf("Enter Hunter Key to Reset: ");
+    scanf("%s", key);
+    sem_wait(sem);
+    for (int i = 0; i < MAX_HUNTERS; ++i) {
+        if (strcmp(hunters[i].key, key) == 0) {
+            hunters[i].level = 1;
+            hunters[i].exp = 0;
+            hunters[i].atk = 10;
+            hunters[i].hp = 100;
+            hunters[i].def = 5;
+            hunters[i].banned = 0;
+
+            printf("Hunter %s has been reset and unbanned. They can now raid again.\n", hunters[i].name);
+            sem_post(sem);
+            return;
+        }
+    }
+    sem_post(sem);
+    printf("Hunter not found.\n");
+}
+```
+Jika code tersebut dijalankan, kita akan memasukkan Hunter Key kemudian hunter tersebut akan di set seperti awal kembali yaitu level 1, exp 0, attack 10, hp 100, defend 5, dan tidak di ban. Jika berhasil akan muncul message “Hunter xxx has been reset and unbanned. They can now raid again.“. Jika Hunter Key tidak ditemukan maka akan muncul message “Hunter not found.”.
+
+## k. Notification
+```
+void show_dungeon_notifications() {
+    while (notif_running) {
+        printf("\n=== Dungeon Notifications ===\n");
+        for (int i = 0; i < MAX_DUNGEONS; ++i) {
+            if (strlen(dungeons[i].name) > 0) {
+                printf("Dungeon: %s | Min Lv: %d | Key: %s\n", 
+                       dungeons[i].name, dungeons[i].min_level, dungeons[i].key);
+            }
+        }
+        sleep(3);
+    }
+}
+```
+Dari code berikut, code `    for (int i = 0; i < MAX_DUNGEONS; ++i) {
+        if (strlen(dungeons[i].name) > 0) {` akan melakukan perulangan untuk mengecek semua dungeon yang tersedia. Jika nama dungeon tidak kosong, berarti dungeon tersebut aktif atau valid. Kemudian code ini  `            printf("Dungeon: %s | Min Lv: %d | Key: %s\n", 
+                   dungeons[i].name, dungeons[i].min_level, dungeons[i].key);` akan menampilkan informasi dari dungeon yang ditampilkan. Agar notification berjalan setiap 3 detik maka digunakan code `sleep(3);`.
+
+## l. Shutdown Server
+```
+ case 7:
+                running = false;
+                continue_running = false; 
+                printf("Shutting down system...\n");
+                break;
+
+```
+Dari `running` dan `continue_running` akan di set ke false agar program system berhenti berjalan, tidak seperti exit yang akan tetap menjalankan system di background. `break` berfungsi untuk menghentikan switch case.
 
