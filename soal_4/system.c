@@ -1,3 +1,4 @@
+//system.c
 #include <stdio.h>
 #include <stdlib.h>
 #include <fcntl.h>
@@ -37,7 +38,6 @@ bool running = true;
 bool continue_running = true;
 
 void handle_sigint(int sig) {
-    // Sistem tetap berjalan meski Ctrl+C ditekan
     printf("\nSIGINT received, but the system continues running.\n");
 }
 
@@ -69,24 +69,20 @@ void show_dungeons() {
 
 void generate_dungeon() {
     const char *names[] = {
-        "Double Dungeon", "Demon Castle", "Pyramid Dungeon", "Red Gate Dungeon",
-        "Hunters Guild Dungeon", "Busan A-Rank Dungeon", "Insects Dungeon",
-        "Goblins Dungeon", "D-Rank Dungeon", "Gwanak Mountain Dungeon", "Hapjeong Subway Station Dungeon"
+        "Double Dungeon", "Demon Castle", "Pyramid Dungeon", "Red Gate Dungeon", "Hunters Guild Dungeon", "Busan A-Rank Dungeon", "Insects Dungeon", "Goblins Dungeon", "D-Rank Dungeon", "Gwanak Mountain Dungeon", "Hapjeong Subway Station Dungeon"
     };
     
     srand(time(NULL));
     for (int i = 0; i < MAX_DUNGEONS; ++i) {
         if (strlen(dungeons[i].name) == 0) {
             int idx = rand() % 11;
-            // Cek apakah nama dungeon sudah ada
             bool unique = false;
             while (!unique) {
-                // Cek apakah nama ini sudah ada di dungeon yang ada
                 unique = true;
                 for (int j = 0; j < MAX_DUNGEONS; ++j) {
                     if (strcmp(dungeons[j].name, names[idx]) == 0) {
                         unique = false;
-                        idx = rand() % 11;  // Pilih nama dungeon baru jika sudah ada
+                        idx = rand() % 11;
                         break;
                     }
                 }
@@ -152,8 +148,6 @@ void reset_hunter() {
             hunters[i].atk = 10;
             hunters[i].hp = 100;
             hunters[i].def = 5;
-
-            // Hapus status banned
             hunters[i].banned = 0;
 
             printf("Hunter %s has been reset and unbanned. They can now raid again.\n", hunters[i].name);
@@ -187,8 +181,8 @@ void admin_menu() {
             case 5: reset_hunter(); break;
             case 6: unban_hunter(); break;
             case 7:
-                running = false;  // Tutup menu dan shutdown sistem
-                continue_running = false;  // Menghentikan sistem
+                running = false;
+                continue_running = false; 
                 printf("Shutting down system...\n");
                 break;
             case 0: 
@@ -200,7 +194,7 @@ void admin_menu() {
 }
 
 int main() {
-    signal(SIGINT, handle_sigint); // Mengabaikan Ctrl+C agar sistem tetap berjalan
+    signal(SIGINT, handle_sigint);
 
     int shm_fd1 = shm_open(SHM_HUNTER, O_CREAT | O_RDWR, 0666);
     ftruncate(shm_fd1, sizeof(Hunter) * MAX_HUNTERS);
@@ -215,13 +209,9 @@ int main() {
     printf("System started. Choose 0 to exit.\n");
     admin_menu();
 
-    // Jika sistem dimatikan secara bersih
     if (!continue_running) {
-        // Unlink shared memory before exiting
         shm_unlink(SHM_HUNTER);
         shm_unlink(SHM_DUNGEON);
-
-        // Close semaphores
         sem_close(sem);
     }
 
