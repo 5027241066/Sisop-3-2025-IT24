@@ -41,14 +41,12 @@
 ### Soal 4
 - [a. Shared Memory](#a-shared-memory)
 - [b. Register Login](#b-register-login)
-- [c. ]
-- [d. ]
-- [e. ]
-- [f. ]
-- [g. ]
-- [h. ]
-- [i. ]
-- [j. ]
+- [c. Hunter Info](#c-hunter-info)
+- [d. Generate Dungeon](#d-generate-dungeon)
+- [e. Dungeon Info](#e-dungeon-info)
+- [f. Dungeon List (Hunter Menu)](#f-dungeon-list-(hunter-menu))
+- [g. Dungeon Raid & Level Up](#g-dungeon-raid-&-level-up)
+- [h. Hunter's Battle (Revised)](#h-hunter's-battle-(revised))
 - [k. ]
 - [l. ]
 
