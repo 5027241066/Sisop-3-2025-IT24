@@ -1,3 +1,4 @@
+//hunter.c
 #include <stdio.h>
 #include <stdlib.h>
 #include <fcntl.h>
@@ -6,7 +7,7 @@
 #include <string.h>
 #include <semaphore.h>
 #include <time.h>
-#include <stdbool.h>  // Pastikan header ini ada
+#include <stdbool.h>
 
 #define MAX_HUNTERS 100
 #define MAX_DUNGEONS 20
@@ -94,9 +95,77 @@ void show_dungeon_notifications() {
                        dungeons[i].name, dungeons[i].min_level, dungeons[i].key);
             }
         }
-        sleep(3);  // Menunggu 3 detik sebelum mengganti notifikasi
+        sleep(3);
     }
 }
+
+void hunter_battle(Hunter *player) {
+    printf("\n=== Hunter's Battle ===\n");
+    printf("Opponents Lists:\n");
+
+    int target_indices[MAX_HUNTERS];
+    int count = 0;
+
+    for (int i = 0; i < MAX_HUNTERS; ++i) {
+        if (strlen(hunters[i].name) > 0 && strcmp(hunters[i].key, player->key) != 0 && !hunters[i].banned) {
+            printf("%d. %s (Level %d | ATK: %d, HP: %d, DEF: %d, Total: %d) - Key: %s\n", count + 1,
+                   hunters[i].name, hunters[i].level, hunters[i].atk, hunters[i].hp, hunters[i].def,
+                   hunters[i].atk + hunters[i].hp + hunters[i].def, hunters[i].key);
+            target_indices[count++] = i;
+        }
+    }
+
+    if (count == 0) {
+        printf("No opponents available.\n");
+        return;
+    }
+
+    char target_key[50];
+    printf("Enter Enemy Hunter Key: ");
+    scanf("%s", target_key);
+
+    sem_wait(sem);
+    int target_index = -1;
+    for (int i = 0; i < MAX_HUNTERS; ++i) {
+        if (strcmp(hunters[i].key, target_key) == 0 && strcmp(hunters[i].key, player->key) != 0 && !hunters[i].banned) {
+            target_index = i;
+            break;
+        }
+    }
+
+    if (target_index == -1) {
+        printf("Opponents not valid.\n");
+        sem_post(sem);
+        return;
+    }
+
+    Hunter *opponent = &hunters[target_index];
+    int player_power = player->atk + player->hp + player->def;
+    int opponent_power = opponent->atk + opponent->hp + opponent->def;
+
+    printf("Fighting against %s...\n", opponent->name);
+    printf("%s (Power: %d) vs %s (Power: %d)\n", player->name, player_power, opponent->name, opponent_power);
+
+    if (player_power >= opponent_power) {
+        printf("You win!\n");
+        player->atk += opponent->atk;
+        player->hp += opponent->hp;
+        player->def += opponent->def;
+        memset(opponent, 0, sizeof(Hunter));
+    } else {
+        printf("You lose!\n");
+        opponent->atk += player->atk;
+        opponent->hp += player->hp;
+        opponent->def += player->def;
+        memset(player, 0, sizeof(Hunter));
+        sem_post(sem);
+        printf("Eliminated.\n");
+        exit(0);
+    }
+
+    sem_post(sem);
+}
+
 
 void user_menu(Hunter *player) {
     int choice;
@@ -105,6 +174,7 @@ void user_menu(Hunter *player) {
         printf("1. Dungeon list\n");
         printf("2. Dungeon Raid\n");
         printf("3. Notifications\n");
+        printf("4. Hunter's Battle\n");  
         printf("0. Exit\n");
         printf("Choice: ");
         scanf("%d", &choice);
@@ -118,19 +188,23 @@ void user_menu(Hunter *player) {
                 break;
             case 3:
                 printf("Notifications activated!\n");
-                notif_running = true;  // Aktifkan notifikasi
-                show_dungeon_notifications();  // Menampilkan notifikasi secara terus-menerus
+                notif_running = true;
+                show_dungeon_notifications(); 
+                break;
+            case 4:
+                hunter_battle(player);  
                 break;
             case 0:
                 printf("Logging out...\n");
-                notif_running = false;  // Matikan notifikasi saat keluar
+                notif_running = false;
                 break;
             default:
                 printf("Invalid choice.\n");
                 break;
         }
-    } while (choice != 5);
+    } while (choice != 0);
 }
+
 
 void register_hunter() {
     sem_wait(sem);
