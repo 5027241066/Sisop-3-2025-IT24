@@ -85,6 +85,7 @@ if (shm_fd1 < 0 || shm_fd2 < 0) {
 Code ini menggunakan shared memory yang telah dijalankan pada system.c. Jika shared memory belum dibuat, maka `shm_open()` akan gagal dan memunculkan message "Run system first.".
 
 ## b. Register Login
+### Register
 ```
 #define MAX_HUNTERS 100
 const char *SHM_HUNTER = "/hunter_shm";
@@ -110,6 +111,54 @@ sem = sem_open(SEM_NAME, 0);
 ```
 Shared memory di-map ke memori proses menggunakan `mmap` untuk mengisi data hunter. 
 
+```
+void register_hunter() {
+    sem_wait(sem);
+    for (int i = 0; i < MAX_HUNTERS; ++i) {
+        if (strlen(hunters[i].name) == 0) {
+            printf("Enter Hunter Name: ");
+            scanf("%s", hunters[i].name);
+            hunters[i].level = 1;
+            hunters[i].exp = 0;
+            hunters[i].atk = 10;
+            hunters[i].hp = 100;
+            hunters[i].def = 5;
+            hunters[i].banned = 0;
+            snprintf(hunters[i].key, 50, "HNT%03d", rand() % 1000);
+            printf("Registered! Key: %s\n", hunters[i].key);
+            sem_post(sem);
+            return;
+        }
+    }
+    printf("Hunter list full!\n");
+    sem_post(sem);
+}
+```
+Program untuk register akan meminta user menuliskan namanya, kemudian mengatur stats awal sesuai soal: level = 1, exp = 0, atk = 10, hp = 100, def = 5 dan mengatur banned = 0 (hunter aktif). Kemudian membuat unique id agar tidak sama dengan user lain dengan format "HNTxxx" dengan nomor acak 0-999. Jika slot hunter penuh maka akan di print "Hunter list full!". Hunter maksimal adalah 100.
 
-
-
+### Login
+```
+void login_hunter() {
+    char key[50];
+    printf("Enter Hunter Key: ");
+    scanf("%s", key);
+    sem_wait(sem);
+    for (int i = 0; i < MAX_HUNTERS; ++i) {
+        if (strcmp(hunters[i].key, key) == 0) {
+            if (hunters[i].banned) {
+                printf("You are banned.\n");
+                sem_post(sem);
+                return;
+            }
+            printf("Welcome, %s! Level %d\n", hunters[i].name, hunters[i].level);
+            Hunter *player = &hunters[i];
+            sem_post(sem);
+            user_menu(player);
+            return; 
+        }
+    }
+    sem_post(sem);
+    printf("Invalid key.\n");
+}
+```
+Untuk fungsi login ini, program akan meminta unique id user untuk digunakan login kemudian mencari hunterkey yang cocok di array `hunters` . Jika hunter di ban maka akan muncul pesan "You are banned." kemudian jika hunterkey salah maka akan muncul pesan "Invalid key". Jika user tidak di ban dan 
