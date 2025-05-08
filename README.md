@@ -730,6 +730,8 @@ void register_hunter() {
 }
 ```
 Program untuk register akan meminta user menuliskan namanya, kemudian mengatur stats awal sesuai soal: level = 1, exp = 0, atk = 10, hp = 100, def = 5 dan mengatur banned = 0 (hunter aktif). Kemudian membuat unique id agar tidak sama dengan user lain dengan format "HNTxxx" dengan nomor acak 0-999. Jika slot hunter penuh maka akan di print "Hunter list full!". Hunter maksimal adalah 100.
+![image](https://github.com/user-attachments/assets/773e437a-0de7-4966-b2c2-84f2ef036a25)
+
 
 ### Login
 ```
@@ -757,6 +759,7 @@ void login_hunter() {
 }
 ```
 Untuk fungsi login ini, program akan meminta unique id user untuk digunakan login kemudian mencari hunterkey yang cocok di array `hunters` . Jika hunter di ban maka akan muncul pesan "You are banned." kemudian jika hunterkey salah maka akan muncul pesan "Invalid key". Jika user benar maka kita akan masuk dan dilanjutkan ke `user_menu`.
+![image](https://github.com/user-attachments/assets/52a6f8ce-3fe9-41c2-a870-6cc8d8a7f5f3)
 
 ## c. Hunter Info
 ```
@@ -775,6 +778,7 @@ void show_hunters() {
 }
 ```
 Fungsi ini menampilkan semua informasi hunter yang tersimpan di shared memory. Menggunakan `sem_wait` dan `sem_post` untuk memastikan akses aman ke shared memory. Informasi yang ditampilkan berisi name, level, exp, atk, hp, def, key, dan status hunter (ACTIVE/BANNED). Status hunter ditentukan oleh field `banned`.
+![image](https://github.com/user-attachments/assets/fee4dee4-2c3c-4b3e-a303-a8eaa4759d3d)
 
 ## d. Generate Dungeon
 ```
@@ -813,6 +817,7 @@ void generate_dungeon() {
 }
 ```
 Dungeon dibuat secara random dengan nama dari array names (sheets). Level dengan range 1 sampai 5. Reward ATK 100–150, HP 50–100, DEF 25–50, dan EXP 150–300. Disimpan ke shared memory `dungeons[]`. Setiap dungeon memiliki unique key `DNGxxx`, dan bisa diakses hunter dari proses lain melalui shared memory.
+![image](https://github.com/user-attachments/assets/e6d17f8a-cb2a-4605-9725-a2a4a8e6aeff)
 
 ## e. Dungeon Info
 ```
@@ -829,6 +834,7 @@ void show_dungeons() {
 }
 ```
 Fungsi `show_dungeons()` menampilkan seluruh informasi dungeon yang ada di shared memory. Informasi yang ditampilkan adalah nama dungeon, level minimum dungeon, reward dungeon (ATK, HP, DEF, dan EXP), Unique Key Dungeon `DNGxxx`. Dungeon hanya ditampilkan jika memiliki nama (valid data), yang diperiksa melalui `strlen(dungeons[i].name) > 0`.
+![image](https://github.com/user-attachments/assets/fe70d2ff-aeb2-4662-8442-d675e9e5bd17)
 
 ## f. Dungeon List (Hunter Menu)
 ```
@@ -845,47 +851,59 @@ void show_dungeons_by_level(Hunter *player) {
 }
 ```
 Fungsi `show_dungeons_by_level()` akan menampilkan daftar dungeon yang dapat diakses oleh hunter berdasarkan level. Hunter hanya dapat melihat dungeon yang memiliki `min_level <= level hunter`. Filter dungeon dilakukan dengan `dungeons[i].min_level <= player->level`  dan hanya dungeon dengan data valid `(strlen(dungeons[i].name) > 0)` yang ditampilkan.
+![image](https://github.com/user-attachments/assets/05e6e706-645e-4c3c-87b8-ace5f9671c37)
+
 
 ## g. Dungeon Raid & Level Up
 ```
-void enter_dungeon(Hunter *hunter, Dungeon *dungeon) {
-    int hunter_power = hunter->ATK + hunter->DEF + hunter->HP;
-    if (hunter_power >= dungeon->difficulty) {
-        printf("Hunter berhasil menaklukkan dungeon!\n");
-
-        hunter->ATK += dungeon->reward_ATK;
-        hunter->DEF += dungeon->reward_DEF;
-        hunter->HP  += dungeon->reward_HP;
-        hunter->EXP += dungeon->reward_EXP;
-
-        if (hunter->EXP >= 500) {
-            hunter->level += 1;
-            hunter->EXP = 0;
-            printf("Hunter naik level!\n");
+void raid_dungeon(Hunter *player) {
+    printf("\n=== Dungeons Available (Level %d) ===\n", player->level);
+    for (int j = 0; j < MAX_DUNGEONS; ++j) {
+        if (strlen(dungeons[j].name) > 0 && dungeons[j].min_level <= player->level) {
+            printf("- %s | Min Lv: %d | ATK+%d | HP+%d | DEF+%d | EXP+%d | Key: %s\n",
+                   dungeons[j].name, dungeons[j].min_level, dungeons[j].reward_atk,
+                   dungeons[j].reward_hp, dungeons[j].reward_def, dungeons[j].reward_exp,
+                   dungeons[j].key);
         }
-        sem_wait(&sem_dungeon);
-        dungeon->is_active = 0;
-        sem_post(&sem_dungeon);
-    } else {
-        printf("Hunter gagal menaklukkan dungeon. Terlalu lemah.\n");
     }
-}
+    char input_key[50];
+    int found = -1;
+
+    printf("\nEnter Dungeon Key to raid: ");
+    scanf("%s", input_key);
+
+    for (int i = 0; i < MAX_DUNGEONS; ++i) {
+        if (strcmp(dungeons[i].key, input_key) == 0 && dungeons[i].min_level <= player->level) {
+            found = i;
+            break;
+        }
+    }
+
+    if (found == -1) {
+        printf("Dungeon not found or level too low.\n");
+        return;
+    }
 ```
-Code berikut berfungsi untuk melakukan raid pada dungeon. Code `hunter_power = ATK + DEF + HP` berfungsi untuk mengukur kekuatan hunter. Kemudia code `if (hunter_power >= dungeon->difficulty)` memastikan dungeon hanya bisa dikalahkan jika hunter lebih kuat. 
-`        hunter->ATK += dungeon->reward_ATK;
-        hunter->DEF += dungeon->reward_DEF;
-        hunter->HP  += dungeon->reward_HP;
-        hunter->EXP += dungeon->reward_EXP;
+Code berikut berfungsi untuk melakukan raid pada dungeon. Akan ditampilkan dahulu list dungeon yang bisa diserang. Code `if (strcmp(dungeons[i].key, input_key) == 0 && dungeons[i].min_level <= player->level) {` berfungsi untuk mengukur kekuatan hunter. Kemudia code `    if (found == -1) {` memastikan dungeon hanya bisa dikalahkan jika hunter lebih kuat. 
+![image](https://github.com/user-attachments/assets/71f15779-60a6-4468-a310-91339b1cab5d)
+
+
+`    player->atk += dun->reward_atk;
+    player->hp += dun->reward_hp;
+    player->def += dun->reward_def;
+    player->exp += dun->reward_exp;
 `
 Code berikut berfungsi untuk menambahkan reward kepada hunter jika berhasil memenangkan dungeon. 
 
-` if (hunter->EXP >= 500) {
-            hunter->level += 1;
-            hunter->EXP = 0;
-            printf("Hunter naik level!\n");
-        }
+`     if (player->exp >= 500) {
+        player->level++;
+        player->exp = 0;
+        printf("Congratulations! You leveled up to Level %d!\n", player->level);
+    }
 `
 Code berikut memeriksa EXP dari hunter, jika EXP sama atau lebih dari 500 setelah memenangkan dungeon maka hunter akan naik level. Ketika hunter naik level maka EXP akan di reset menjadi 0 kembali.
+![image](https://github.com/user-attachments/assets/9ce4dac5-25e4-44e0-8633-94510786c135)
+
 
 ## h. Hunter’s Battle (Revised)
 
@@ -935,6 +953,9 @@ Code berikut  berfungsi untuk menampilkan lawan tersedia, menampilkan semua hunt
 ```
 
 Jika tidak ada hunter lain maka akan mendapatkan pesan “No opponents available.”. Kemudian jika terdapat hunter lain maka kita akan diperintahkan untuk memasukkan Hunter Key lawan yang dipiliih. Kemudian jika salah memasukkan Hunter Key maka akan ditampilkan “Opponents not valid”.
+![image](https://github.com/user-attachments/assets/6f6b9e34-6070-4434-964b-6239f0a0f65f)
+
+
 ```
 Hunter *opponent = &hunters[target_index];
     int player_power = player->atk + player->hp + player->def;
@@ -964,6 +985,8 @@ Hunter *opponent = &hunters[target_index];
     }
 ```
 Setalah memilih musuh akan muncul message “Fighting against xxx”. Jika kita lebih kuat dalam segala aspek dari musuh maka kita akan menang dan muncul message “You Win!” dan user hunter lawan akan dihapus dari shared memory. Jika kita kalah dari lawan maka akan muncul message “You Lose!” dan “Eliminated!” kemudian user kita akan dihapus dari shared memory. 
+![image](https://github.com/user-attachments/assets/045b3916-2939-445b-9a20-7eb56dd9ff88)
+
 
 ## i. Ban & Unban Hunter
 ```
