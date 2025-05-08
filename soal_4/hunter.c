@@ -49,6 +49,15 @@ void show_dungeons_by_level(Hunter *player) {
 }
 
 void raid_dungeon(Hunter *player) {
+    printf("\n=== Dungeons Available (Level %d) ===\n", player->level);
+    for (int j = 0; j < MAX_DUNGEONS; ++j) {
+        if (strlen(dungeons[j].name) > 0 && dungeons[j].min_level <= player->level) {
+            printf("- %s | Min Lv: %d | ATK+%d | HP+%d | DEF+%d | EXP+%d | Key: %s\n",
+                   dungeons[j].name, dungeons[j].min_level, dungeons[j].reward_atk,
+                   dungeons[j].reward_hp, dungeons[j].reward_def, dungeons[j].reward_exp,
+                   dungeons[j].key);
+        }
+    }
     char input_key[50];
     int found = -1;
 
