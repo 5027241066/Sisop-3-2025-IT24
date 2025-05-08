@@ -730,6 +730,7 @@ void register_hunter() {
 }
 ```
 Program untuk register akan meminta user menuliskan namanya, kemudian mengatur stats awal sesuai soal: level = 1, exp = 0, atk = 10, hp = 100, def = 5 dan mengatur banned = 0 (hunter aktif). Kemudian membuat unique id agar tidak sama dengan user lain dengan format "HNTxxx" dengan nomor acak 0-999. Jika slot hunter penuh maka akan di print "Hunter list full!". Hunter maksimal adalah 100.
+
 ![image](https://github.com/user-attachments/assets/773e437a-0de7-4966-b2c2-84f2ef036a25)
 
 
@@ -883,6 +884,22 @@ void raid_dungeon(Hunter *player) {
         printf("Dungeon not found or level too low.\n");
         return;
     }
+
+    Dungeon *dun = &dungeons[found];
+    printf("\nYou raided '%s' successfully!\n", dun->name);
+    printf("Rewards: +%d ATK | +%d HP | +%d DEF | +%d EXP\n",
+           dun->reward_atk, dun->reward_hp, dun->reward_def, dun->reward_exp);
+
+    player->atk += dun->reward_atk;
+    player->hp += dun->reward_hp;
+    player->def += dun->reward_def;
+    player->exp += dun->reward_exp;
+
+    if (player->exp >= 500) {
+        player->level++;
+        player->exp = 0;
+        printf("Congratulations! You leveled up to Level %d!\n", player->level);
+    }
 ```
 Code berikut berfungsi untuk melakukan raid pada dungeon. Akan ditampilkan dahulu list dungeon yang bisa diserang. Code `if (strcmp(dungeons[i].key, input_key) == 0 && dungeons[i].min_level <= player->level) {` berfungsi untuk mengukur kekuatan hunter. Kemudia code `    if (found == -1) {` memastikan dungeon hanya bisa dikalahkan jika hunter lebih kuat. 
 ![image](https://github.com/user-attachments/assets/71f15779-60a6-4468-a310-91339b1cab5d)
@@ -1016,6 +1033,11 @@ void ban_hunter(int hunter_id) {
 ```
 Ketika dijalankan dan ditemukan hunter dengan ID yang sesuai `(hunters[i].id == hunter_id)`, maka field banned pada data hunter tersebut diset menjadi `1`, yang berarti hunter tersebut dibanned. Program memunculkan message bahwa hunter telah dibanned. `break` digunakan untuk menghentikan perulangan karena hunter sudah ditemukan.
 
+![image](https://github.com/user-attachments/assets/da4951d4-95a3-43de-a164-e8856b1e8dfe)
+
+![image](https://github.com/user-attachments/assets/cd82ae91-7d34-4f39-9db4-ecce0764c07b)
+
+
 ### Unban
 ```
 void unban_hunter(int hunter_id) {
@@ -1032,6 +1054,11 @@ void unban_hunter(int hunter_id) {
 }
 ```
 Ketika dijalankan dan ditemukan hunter dengan ID yang sesuai `(hunters[i].id == hunter_id)`, maka field banned pada data hunter tersebut diset menjadi `0` kembali, yang berarti hunter tersebut telah di unban. Program memunculkan message bahwa hunter telah unban. `break` digunakan untuk menghentikan perulangan karena hunter sudah ditemukan.
+
+![image](https://github.com/user-attachments/assets/c4d73e61-4acb-4f59-a4a6-12d10ea72a6e)
+
+![image](https://github.com/user-attachments/assets/db0f18ba-94ba-40ff-928c-1f82cfd3eb8f)
+
 
 ## j. Reset Hunter
 ```
@@ -1060,6 +1087,10 @@ void reset_hunter() {
 ```
 Jika code tersebut dijalankan, kita akan memasukkan Hunter Key kemudian hunter tersebut akan di set seperti awal kembali yaitu level 1, exp 0, attack 10, hp 100, defend 5, dan tidak di ban. Jika berhasil akan muncul message “Hunter xxx has been reset and unbanned. They can now raid again.“. Jika Hunter Key tidak ditemukan maka akan muncul message “Hunter not found.”.
 
+![image](https://github.com/user-attachments/assets/a4d812c6-f430-49f8-b5d9-a551642f6252)
+
+![image](https://github.com/user-attachments/assets/d1f493a0-2055-463d-9598-fdaf4a8d8abe)
+
 ## k. Notification
 ```
 void show_dungeon_notifications() {
@@ -1079,6 +1110,9 @@ Dari code berikut, code `    for (int i = 0; i < MAX_DUNGEONS; ++i) {
         if (strlen(dungeons[i].name) > 0) {` akan melakukan perulangan untuk mengecek semua dungeon yang tersedia. Jika nama dungeon tidak kosong, berarti dungeon tersebut aktif atau valid. Kemudian code ini  `            printf("Dungeon: %s | Min Lv: %d | Key: %s\n", 
                    dungeons[i].name, dungeons[i].min_level, dungeons[i].key);` akan menampilkan informasi dari dungeon yang ditampilkan. Agar notification berjalan setiap 3 detik maka digunakan code `sleep(3);`.
 
+![image](https://github.com/user-attachments/assets/13ec1207-9763-48cc-887b-3aa2b0be8c63)
+
+
 ## l. Shutdown Server
 ```
  case 7:
@@ -1089,4 +1123,7 @@ Dari code berikut, code `    for (int i = 0; i < MAX_DUNGEONS; ++i) {
 
 ```
 Dari `running` dan `continue_running` akan di set ke false agar program system berhenti berjalan, tidak seperti exit yang akan tetap menjalankan system di background. `break` berfungsi untuk menghentikan switch case.
+
+![image](https://github.com/user-attachments/assets/40c2a947-ff11-4d79-b88d-5f5e3b3187ad)
+
 
