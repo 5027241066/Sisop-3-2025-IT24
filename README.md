@@ -32,13 +32,13 @@
  
 ### Soal 3
 - [a. Entering the Dungeon](#a-Entering-the-Dungeon)
-- b.Sightseeing
-- c.Status Check
-- d.Weapon Shop
-- e.Handy Inventory
-- f.Enemy Encounter
-- g.Other Battle Logic
-- h.Error Handling
+- [b.Sightseeing](#b-Sightseeing)
+- [c.Status Check](#c-Status-Check)
+- [d.Weapon Shop](#d-Weapon-Shop)
+- [e.Handy Inventory](#e-Handy-Iventory)
+- [f.Enemy Encounter](#f-Enemy-Ecounter)
+- [g.Other Battle Logic](#g-Other-Battle-Logic)
+- [h.Error Handling](#h-Error-Handling)
 
  
 ### Soal 4
