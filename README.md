@@ -31,7 +31,7 @@
 
  
 ### Soal 3
-- [a. Entering the Dungeon](a._Entering_the_Dungeon)
+- [a. Entering the Dungeon](a_Entering_the_Dungeon)
 - [b.Sightseeing]
 - [c.Status Check]
 - [d.Weapon Shop]
