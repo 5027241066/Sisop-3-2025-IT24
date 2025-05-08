@@ -13,20 +13,21 @@
 
 ## Daftar Isi
 ### Soal 1
-- [a. ]
-- [b. ]
-- [c. ]
-- [d. ]
-- [e. ]
-- [f. ]
-- [g. ]
+- [a. Downloading dan Unzipping File Input txt](#a-downloading-dan-unzipping-file-input-txt)
+- [b. Membuat image server sebagai Daemon dan Menghubungkannya dengan image client melalui RPC](#b-membuat-image-server-sebagai-daemon-dan-menghubungkannya-dengan-image-client-melalui-rpc)
+- [c. Membuat Code image client untuk Mendecrypt File menjadi Gambar](#c-membuat-code-image-client-untuk-mendecrypt-file-menjadi-gambar)
+- [d. Membuat Menu image client sebagai Menu Kreatif yang Menerima Input Berkali Kali](#d-membuat-menu-image-client-sebagai-menu-kreatif-yang-menerima-input-berkali-kali)
+- [e. Visibilitas Gambar yang Dihasilkan dari Proses Decrypt File txt](#e-visibilitas-gambar-yang-dihasilkan-dari-proses-decrypt-file-txt)
+- [f. Error Handling Program](#f-error-handling-program)
+- [g. Mencatat Log Activity Program pada server log](#g-mencatat-log-activity-program-pada-server-log)
   
 ### Soal 2
-- [a. ]
-- [b. ]
-- [c. ]
-- [d. ]
-- [e. ]
+- [a. Mengunduh File Order dan Menyimpannya ke Shared Memory](#a-mengunduh-file-order-dan-menyimpannya-ke-shared-memory)
+- [b. Pengiriman Bertipe Express](#b-pengiriman-bertipe-express)
+- [c. Pengiriman Bertipe Reguler](#c-pengiriman-bertipe-reguler)
+- [d. Mengecek Status Pesanan](#d-mengecek-status-pesanan)
+- [e. Melihat Daftar Semua Pesanan](#e-melihat-daftar-semua-pesanan)
+
  
 ### Soal 3
 - [a. ]
@@ -53,8 +54,298 @@
 - [l. Shutdown Server](#l-shutdown-server)
 
 # Soal 1
+Sekarang tahun 2045, seluruh dunia mengalami kekacauan dalam segala infrastruktur siber. Sebagai seorang mahasiswa Departemen Teknologi Informasi ITS, anda memiliki ide untuk kembali ke masa lalu (tahun 2025) untuk memanggil hacker asal Semarang bernama “rootkids” yang mampu melawan segala hacker lain. Tetapi anda tidak tahu bagaimana cara mencapainya.
+
+Hanya sedikit yang diketahui tentang hacker bernama “rootkids”. Beberapa informasi yang anda temukan dari deep web hanyalah berupa beberapa file text yang berisi tulisan aneh, beserta beberapa petunjuk untuk mengubah text tersebut menjadi sebuah file jpeg.
+
+Karena anda adalah seorang professional programmer, anda mengikuti petunjuk yang anda dapatkan dari deep web untuk membuat sistem RPC server-client untuk mengubah text file sehingga bisa dilihat dalam bentuk file jpeg. Situs deep web yang anda baca terlihat sebagai berikut. 
+
+## a. Downloading dan Unzipping File Input txt
+Mendownload `secrets.zip` dan mengekstrak secara manual ke dalam directory `/client/secrets`
+
+## b. Membuat image server sebagai Daemon dan Menghubungkannya dengan image client melalui RPC
+- `image_server.c` akan berjalan sebagai `daemon` (berjalan terus menerus pada background).
+- Menggunakan socket TCP `(AF_INET)`, untuk komunikasi melalui RPC dengan client.
+
+
+```
+void daemonize() {
+    pid_t pid = fork();
+    if (pid < 0) exit(EXIT_FAILURE);
+    if (pid > 0) exit(EXIT_SUCCESS); 
+    
+    setsid();
+    umask(0);
+    chdir("/");
+
+    for (int x = sysconf(_SC_OPEN_MAX); x >= 0; x--) close(x);
+}
+
+int server_fd = socket(AF_INET, SOCK_STREAM, 0);
+struct sockaddr_in server_addr;
+server_addr.sin_family = AF_INET;
+server_addr.sin_port = htons(PORT);
+server_addr.sin_addr.s_addr = INADDR_ANY;
+
+bind(server_fd, (struct sockaddr*)&server_addr, sizeof(server_addr));
+listen(server_fd, 5);
+```
+Penjelasan :
+- Server akan dijalankan secara daemon dengan `./server/image_server`.
+- Client akan terhubung ke port `127.0.0.1:8080`.
+- Melakukan komunikasi dengan format pesan :
+    - Upload : `SEND|(filename)|(data)`
+    - Download : `DOWNLOAD|(filename)`
+    
+
+## c. Membuat Code image client untuk Mendecrypt File menjadi Gambar
+Proses decrypt dilakukan dengan mereverse text dengan format txt, lalu melakukan decode dari hex ke binary untuk dapat menjadi gambar dengan format .jpeg
+
+```
+void reverse(char *str) {
+    for (int i = 0, j = strlen(str)-1; i < j; i++, j--) {
+        char temp = str[i];
+        str[i] = str[j];
+        str[j] = temp;
+    }
+}
+
+int hex_ke_binary(const char *hex, unsigned char *output) {
+    for (int i = 0; i < strlen(hex); i += 2) {
+        sscanf(hex + i, "%2hhx", &output[i/2]);
+    }
+    return strlen(hex) / 2;
+}
+```
+- Output dari hasil decrypt akan disimpan pada direktori `/server/database`.
+- Format dari hasil decrypt berupa timestamp dengan format .jpeg
+
+
+## d. Membuat Menu image client sebagai Menu Kreatif yang Menerima Input Berkali Kali
+```
+while (1) {
+    printf("\n============== IMAGE CLIENT =============\n");
+    printf("1. Kirim file teks ke server\n");
+    printf("2. Download file JPEG dari server\n");
+    printf("3. Exit\n");
+    printf("Pilih opsi: ");
+    scanf("%d", &opsi);
+
+    switch (opsi) {
+        case 1: kirim_file(); break;
+        case 2: download_file(); break;
+        case 3: exit(0);
+        default: printf("Opsi tidak valid.\n");
+    }
+}
+```
+Terdapat 3 fitur dan sebuah `default` case :
+- Menu untuk mengirim file teks ke server
+- Menu untuk mendownload file yang telah di decrypt dari server
+- Menu untuk keluar dari program
+
+## e. Visibilitas Gambar yang Dihasilkan dari Proses Decrypt File txt
+Sejauh ini, text belum terdecrypt dengan benar, sehingga belum dihasilkan visibilitas gambarnya. Namun, untuk masalah komunikasi antara `server` dan `client` sudah berjalan lancar, file berhasil di upload dengan format txt dan disimpan ke database setelah di decrypt, dan dapat di unduh kembali.
+
+## f. Error Handling Program
+Terdapat beberapa error handling dalam program ini :
+- Error handling untuk masalah gagal connect ke server
+- Error handling ketika ada nama file yang tidak sesuai dengan yang ada di client atau server
+- Error handling untuk pesan RPC salah
+
+```
+if (connect(sock, (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0) {
+    perror("Gagal connect ke server");
+    exit(1);
+}
+```
+```
+if (!fin) {
+    char *res = "ERROR|File tidak ditemukan";
+    write(sock, res, strlen(res));
+    tulis_log("Server", "ERROR", "File tidak ditemukan");
+    close(sock);
+    exit(1);
+}
+```
+
+## g. Mencatat Log Activity Program pada server log
+```
+void tulis_log(const char *sumber, const char *aksi, const char *info) {
+    FILE *log = fopen(LOG_FILE, "a");
+    time_t now = time(NULL);
+    struct tm *t = localtime(&now);
+    char waktu[100];
+    strftime(waktu, sizeof(waktu), "%Y-%m-%d %H:%M:%S", t);
+    fprintf(log, "[%s][%s]: [%s] [%s]\n", sumber, waktu, aksi, info);
+    fclose(log);
+}
+```
+- Mencatat segala log aktivitas dari `client` maupun `server`.
+- Mencatat beberapa aksi seperti `DECRYPT`, `SAVE`, `DOWNLOAD`, dan `UPLOAD`
+
 
 # Soal 2
+Tahun 2025, di tengah era perdagangan serba cepat, berdirilah sebuah perusahaan ekspedisi baru bernama RushGo. RushGo ingin memberikan layanan ekspedisi terbaik dengan 2 pilihan, Express (super cepat) dan Reguler (standar). Namun, pesanan yang masuk sangat banyak! Mereka butuh sebuah sistem otomatisasi pengiriman, agar agen-agen mereka tidak kewalahan menangani pesanan yang terus berdatangan. Kamu ditantang untuk membangun Delivery Management System untuk RushGo (Author: Nayla / naylaarr)
+
+Sistem ini terdiri dari dua bagian utama:
+- `delivery_agent.c` untuk agen otomatis pengantar Express
+- `dispatcher.c untuk` pengiriman dan monitoring pesanan oleh user
+
+## a. Mengunduh File Order dan Menyimpannya ke Shared Memory
+Mengunduh File Order dan Menyimpannya ke Shared Memory
+Untuk memulai, Anda perlu mengelola semua orderan yang masuk dengan menggunakan shared memory.
+- Unduh file delivery_order.csv
+- Setelah file CSV diunduh, program Anda harus membaca seluruh data dari CSV dan menyimpannya ke dalam shared memory.
+
+Mengunduh file `delivery_order.csv` secara manual, dan memindahkan ke direktori soal ini.
+
+Struktur data shared memory :
+```
+typedef struct {
+    char nama[50];
+    char alamat[50];
+    char jenis[10];  
+    char status[15]; 
+    char agen[20];  
+} order;
+
+typedef struct {
+    order daftar_order[50];
+    int jumlah_order;
+} shared_data;
+```
+- Struct `order` digunakan untuk menangani informasi tentang pesanan seperti nama pelanggan, alamat pelanggan, jenis pengiriman, status pengiriman, dan nama agen pengiriman
+- Struct `shared_data` digunakan untuk menangani daftar order dan jumlah order utuk menangani pesanan
+
+Struktur untuk memuat file csv ke shared memory :
+```
+void muat_file_csv_ke_memori(const char *namafile) {
+    FILE *fp = fopen(namafile, "r");
+    while (fgets(baris, sizeof(baris), fp)) {
+        sscanf(baris, "%49[^,],%49[^,],%9[^\n]",
+               data->daftar_order[data->jumlah_order].nama,
+               data->daftar_order[data->jumlah_order].alamat,
+               data->daftar_order[data->jumlah_order].jenis);
+
+        strcpy(data->daftar_order[data->jumlah_order].status, "PENDING");
+        data->jumlah_order++;
+    }
+    fclose(fp);
+}
+```
+- `delivery_order.csv` akan dibaca dan dimuat ke dalam shared memory
+- Mengakses shared memory dengan `key = frok("delivery_agent.c"), 123`
+- Memuat data order dengan atribut nama pelanggan, alamat pelanggan, dan jenis pengiriman
+- Mengubah semua status pengiriman yang baru diinput sebagai `PENDING`, karena belum ada pesanan yang diantar
+
+## b. Pengiriman Bertipe Express
+RushGo memiliki tiga agen pengiriman utama: AGENT A, AGENT B, dan AGENT C.
+Setiap agen dijalankan sebagai thread terpisah.
+Agen-agen ini akan secara otomatis:
+- Mencari order bertipe Express yang belum dikirim.
+- Mengambil dan mengirimkannya tanpa intervensi user.
+- Setelah sukses mengantar, program harus mencatat log di delivery.log
+
+```
+void *agen_jalan(void *arg) {
+    char *agen = (char *)arg;
+    while (1) {
+        for (int i = 0; i < data->jumlah_order; i++) {
+            if (strcmp(data->daftar_order[i].jenis, "Express") == 0 &&
+                strcmp(data->daftar_order[i].status, "PENDING") == 0) {
+
+                strcpy(data->daftar_order[i].status, "DELIVERED");
+                strcpy(data->daftar_order[i].agen, agen);
+                tulis_log(agen, data->daftar_order[i].nama, data >daftar_order[i].alamat);
+            }
+        }
+        sleep(1); 
+    }
+}
+
+int main() {
+pthread_create(&agen_a, NULL, agen_jalan, "A");
+pthread_create(&agen_b, NULL, agen_jalan, "B");
+pthread_create(&agen_c, NULL, agen_jalan, "C");
+
+return 0;
+};
+```
+
+- Jalankan `./delivery_agent.c`
+- Dilakukan pengecekan apakah ada order tipe express yang masih pending, jika ada maka order akan diantar dan statusnya diubah menjadi delivered.
+- Tuliskan log dari proses `delivery_agent` dengan memanggil fungsi penulisan log
+- Buat 3 thread berbeda untuk dapat menjalankan agent express A, B, C dalam thread yang berbeda
+  
+## c. Pengiriman Bertipe Reguler
+Berbeda dengan Express, untuk order bertipe Reguler, pengiriman dilakukan secara manual oleh user.
+User dapat mengirim permintaan untuk mengantar order Reguler dengan memberikan perintah deliver dari dispatcher. 
+Penggunaan:
+`./dispatcher -deliver [Nama]`
+- Pengiriman dilakukan oleh agent baru yang namanya adalah nama user.
+- Setelah sukses mengantar, program harus mencatat log di delivery.log
+
+```
+if (strcmp(argv[1], "-deliver") == 0) {
+    for (int i = 0; i < data->jumlah_order; i++) {
+        if (strcmp(data->daftar_order[i].nama, argv[2]) == 0 &&
+            strcmp(data->daftar_order[i].jenis, "Reguler") == 0) {
+
+            strcpy(data->daftar_order[i].status, "DELIVERED");
+            strcpy(data->daftar_order[i].agen, getenv("USER"));
+            tulis_log(getenv("USER"), data->daftar_order[i].nama, data->daftar_order[i].alamat);
+        }
+    }
+}
+```
+- Jalankan program `dispatcher -deliver [Nama]`.
+- Dilakukan pengecekan apakah nama input sesuai dengan data pada `daftar_order` dan dilakukan pengecekan apakah order tersebut berasal dari order reguler.
+- Jika ditemukan kecocokan, maka order akan dikirim (delivered) dan akan mengambil nilai agen mana yang mengirimkan order tersebut.
+- Memanggil fungi tulis log aktivitas untuk mencatat aktivitas program sesuai dengan data yang ada.
+
+## d. Mengecek Status Pesanan
+Mengecek Status Pesanan
+Dispatcher juga harus bisa mengecek status setiap pesanan.
+Penggunaan:
+`./dispatcher -status [Nama]`
+
+```
+else if (strcmp(argv[1], "-status") == 0) {
+    for (int i = 0; i < data->jumlah_order; i++) {
+        if (strcmp(data->daftar_order[i].nama, argv[2]) == 0) {
+            printf("Status for %s: %s by Agent %s\n", 
+                   data->daftar_order[i].nama,
+                   data->daftar_order[i].status,
+                   data->daftar_order[i].agen);
+        }
+    }
+}
+```
+- Jalankan `./dispatcher -status [Nama]`
+- Melakukan pengecekan apakah nama input sesuai dengan data order
+- Jika sesuai, akan melakukan printout status order berupa nama, status pengiriman, dan nama agen
+
+## e. Melihat Daftar Semua Pesanan
+Untuk memudahkan monitoring, program dispatcher bisa menjalankan perintah list untuk melihat semua order disertai nama dan statusnya.
+Penggunaan:
+`./dispatcher -list`
+
+```
+else if (strcmp(argv[1], "-list") == 0) {
+    for (int i = 0; i < data->jumlah_order; i++) {
+        printf("%d. %s (%s) | %s\n",
+               i + 1,
+               data->daftar_order[i].nama,
+               data->daftar_order[i].jenis,
+               data->daftar_order[i].status);
+    }
+}
+```
+- Jalankan perintah `./dispatcher -list`
+- Melakukan perulangan untuk menampilkan data order
+- Data yang ditampilkan berupa nama, jenis, dan status order
+
 
 # Soal 3
 
