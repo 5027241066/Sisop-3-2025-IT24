@@ -416,6 +416,302 @@ Output log express dan reguler :
 
 
 # Soal 3
+# The Lost Dungeon
+---
+Program ini merupakan permainan berbasis teks dengan arsitektur client-server menggunakan socket TCP dan multithreading (`pthread`). Terdapat dua file utama:
+
+- `dungeon.c` sebagai **server dungeon** yang memproses semua logic game dan menyimpan status player.
+- `player.c` sebagai **client** yang terhubung ke server untuk mengakses fitur dungeon.
+
+---
+
+### a. Entering the Dungeon
+
+Saat `player.c` dijalankan, program akan mengirim koneksi TCP ke server (`dungeon.c`) di `127.0.0.1:8080`.
+
+**Command (dari client):**
+
+```c
+connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr));
+```
+
+**Output (di server):**
+
+```
+[SERVER] Client terhubung.
+```
+
+Server akan membuat thread baru dengan `pthread_create` untuk menangani masing-masing client.
+
+---
+
+### b. Sightseeing
+
+Client menampilkan menu utama agar pemain bisa menjelajahi fitur dungeon.
+
+**Command (di client):**
+
+```text
+1. Show Player Stats
+2. Shop
+3. View Inventory
+4. Battle Mode
+5. Exit
+```
+
+**Setiap opsi dikirim ke server sebagai angka string:**
+
+```c
+send(sock, pilihan, strlen(pilihan), 0);
+```
+
+---
+
+### c. Status Check
+
+Saat pemain memilih opsi `1`, client mengirim `"1"` ke server. Server akan mengirimkan status pemain yang mencakup:
+
+- Gold
+- Senjata aktif
+- Damage dasar
+- Passive (jika ada)
+- Jumlah musuh dikalahkan
+
+**Command (dikirim ke server):**
+
+```
+"1"
+```
+
+**Output (dari server):**
+
+```
+===== Player Status =====
+Gold            : 120G
+Active Weapon   : Bow
+Base Damage     : 8
+Passive         : Poison
+Enemies Defeated: 3
+=========================
+```
+
+Jika belum punya senjata:
+
+```
+Active Weapon   : (Belum ada)
+Base Damage     : 5
+Passive         : -
+```
+
+---
+
+### d. Weapon Shop
+
+Saat memilih opsi `2`, client mengirim `"2"` ke server. Server menampilkan daftar senjata yang bisa dibeli.
+
+**Command:**
+
+```
+"2"
+```
+
+**Output (dari server):**
+
+```
+===== Weapon Shop =====
+1. Sword  - 50G  - Damage: 10
+2. Bow    - 60G  - Damage: 8  (Passive: Poison)
+3. Axe    - 70G  - Damage: 12
+4. Staff  - 90G  - Damage: 7  (Passive: Heal)
+5. Dagger - 40G  - Damage: 6
+Pilih senjata [1–5], atau 0 untuk batal:
+```
+
+**Lalu client kirim angka pilihan senjata (misal `"2"` untuk Bow)**
+
+Jika berhasil:
+
+```
+Berhasil membeli Bow! Sisa gold: 60G
+```
+
+Jika gold tidak cukup:
+
+```
+Uang tidak cukup untuk membeli senjata.
+```
+
+---
+
+### e. Handy Inventory
+
+Saat client mengirim `"3"`, server akan menampilkan daftar senjata yang dimiliki.
+
+**Command:**
+
+```
+"3"
+```
+
+**Output:**
+
+```
+===== Inventory =====
+1. Bow (Damage: 8, Passive: Poison)
+2. Dagger (Damage: 6)
+Pilih nomor senjata untuk equip, atau 0 untuk batal:
+```
+
+**Lalu client mengirim `"1"` untuk memilih senjata pertama**
+
+**Output jika berhasil equip:**
+
+```
+Senjata aktif sekarang: Bow
+```
+
+Jika memilih `0`:
+
+```
+Tidak jadi equip senjata.
+```
+
+---
+
+### f. Enemy Encounter
+
+Saat client mengirim `"4"`, server memulai battle mode.
+
+**Command:**
+
+```
+"4"
+```
+
+**Output awal:**
+
+```
+Musuh muncul dengan 155 HP!
+Ketik 'attack' untuk menyerang atau 'exit' untuk keluar battle mode.
+```
+
+**Command:**
+
+```
+"attack"
+```
+
+**Output jika berhasil menyerang:**
+
+```
+Kamu menyerang musuh: 12 damage
+Passive aktif: Musuh terkena poison selama 2 turn.
+Sisa HP musuh: 143
+```
+
+Jika critical hit:
+
+```
+Kamu menyerang musuh: 22 damage (Critical!)
+```
+
+Jika musuh kalah:
+
+```
+Seranganmu membunuh musuh!
+Reward: 25G
+Total musuh dikalahkan: 4
+Musuh baru muncul dengan 137 HP.
+```
+
+**Command untuk keluar battle mode:**
+
+```
+"exit"
+```
+
+**Output:**
+
+```
+Keluar dari Battle Mode.
+```
+
+---
+
+### g. Other Battle Logic
+
+#### ✅ HP & Reward:
+
+- HP musuh dibuat acak antara **50–200**:
+
+```c
+int enemy_hp = 50 + rand() % 151;
+```
+
+- Reward gold dibuat acak antara **10–30**:
+
+```c
+int gold_reward = 10 + rand() % 21;
+```
+
+#### ✅ Damage Equation:
+
+- Base damage: senjata aktif (atau 5 jika belum punya)
+- Modifier: `+0` sampai `+2` (acak)
+- Critical hit 25%:
+
+```c
+int is_critical = rand() % 100 < 25;
+```
+
+#### ✅ Passive Effect:
+
+- `Poison`: memberikan 5 damage tambahan selama 2 turn.
+- `Heal`: menyembuhkan 10–20 HP (simulasi).
+
+---
+
+## 💾 Penyimpanan Data
+
+Status pemain disimpan di file `player_data.txt`:
+
+```
+120         # gold
+2           # jumlah inventory
+4           # enemies defeated
+Sword 10 -
+Bow 8 Poison
+1           # index weapon aktif
+```
+
+Saat program dijalankan kembali, file ini dibaca dan status dipulihkan dengan fungsi `load_player()`.
+
+---
+
+## ⚠️ Error Handling
+
+#### Input menu tidak valid:
+
+```
+Pilihan tidak dikenal. Masukkan 1–5.
+```
+
+#### Inventory kosong saat ingin equip:
+
+```
+Inventory kosong.
+```
+
+#### Input selain `attack` atau `exit` dalam battle:
+
+```
+Input tidak valid! Gunakan 'attack' atau 'exit'.
+```
+
+---
+
+---
+
 
 # Soal 4
 ## a. Shared Memory
