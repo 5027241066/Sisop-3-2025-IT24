@@ -60,6 +60,11 @@ Hanya sedikit yang diketahui tentang hacker bernama “rootkids”. Beberapa inf
 
 Karena anda adalah seorang professional programmer, anda mengikuti petunjuk yang anda dapatkan dari deep web untuk membuat sistem RPC server-client untuk mengubah text file sehingga bisa dilihat dalam bentuk file jpeg. Situs deep web yang anda baca terlihat sebagai berikut. 
 
+Working directory akhir : 
+
+
+![tree server client](assets/tree%20server%20client.png)
+
 ## a. Downloading dan Unzipping File Input txt
 Mendownload `secrets.zip` dan mengekstrak secara manual ke dalam directory `/client/secrets`
 
@@ -120,6 +125,10 @@ int hex_ke_binary(const char *hex, unsigned char *output) {
 - Output dari hasil decrypt akan disimpan pada direktori `/server/database`.
 - Format dari hasil decrypt berupa timestamp dengan format .jpeg
 
+Output : 
+
+
+![upload from client to server](assets/upload%20from%20client%20to%20server.png)
 
 ## d. Membuat Menu image client sebagai Menu Kreatif yang Menerima Input Berkali Kali
 ```
@@ -143,6 +152,11 @@ Terdapat 3 fitur dan sebuah `default` case :
 - Menu untuk mengirim file teks ke server
 - Menu untuk mendownload file yang telah di decrypt dari server
 - Menu untuk keluar dari program
+
+Output : 
+
+
+![download form server to client](assets/download%20form%20server%20to%20client.png)
 
 ## e. Visibilitas Gambar yang Dihasilkan dari Proses Decrypt File txt
 Sejauh ini, text belum terdecrypt dengan benar, sehingga belum dihasilkan visibilitas gambarnya. Namun, untuk masalah komunikasi antara `server` dan `client` sudah berjalan lancar, file berhasil di upload dengan format txt dan disimpan ke database setelah di decrypt, dan dapat di unduh kembali.
@@ -169,6 +183,16 @@ if (!fin) {
 }
 ```
 
+Output :
+
+
+![error handling nama file](assets/error%20handling%20nama%20file.png)
+
+
+
+
+![error handling w no server](assets/error%20handling%20w%20no%20server.png)
+
 ## g. Mencatat Log Activity Program pada server log
 ```
 void tulis_log(const char *sumber, const char *aksi, const char *info) {
@@ -184,6 +208,11 @@ void tulis_log(const char *sumber, const char *aksi, const char *info) {
 - Mencatat segala log aktivitas dari `client` maupun `server`.
 - Mencatat beberapa aksi seperti `DECRYPT`, `SAVE`, `DOWNLOAD`, dan `UPLOAD`
 
+Output :
+
+
+![server client log](assets/server%20client%20log.png)
+
 
 # Soal 2
 Tahun 2025, di tengah era perdagangan serba cepat, berdirilah sebuah perusahaan ekspedisi baru bernama RushGo. RushGo ingin memberikan layanan ekspedisi terbaik dengan 2 pilihan, Express (super cepat) dan Reguler (standar). Namun, pesanan yang masuk sangat banyak! Mereka butuh sebuah sistem otomatisasi pengiriman, agar agen-agen mereka tidak kewalahan menangani pesanan yang terus berdatangan. Kamu ditantang untuk membangun Delivery Management System untuk RushGo (Author: Nayla / naylaarr)
@@ -191,6 +220,11 @@ Tahun 2025, di tengah era perdagangan serba cepat, berdirilah sebuah perusahaan 
 Sistem ini terdiri dari dua bagian utama:
 - `delivery_agent.c` untuk agen otomatis pengantar Express
 - `dispatcher.c untuk` pengiriman dan monitoring pesanan oleh user
+
+Working directory akhir :
+
+
+![deliver full tree](assets/deliver%20full%20tree.png)
 
 ## a. Mengunduh File Order dan Menyimpannya ke Shared Memory
 Mengunduh File Order dan Menyimpannya ke Shared Memory
@@ -277,6 +311,11 @@ return 0;
 - Dilakukan pengecekan apakah ada order tipe express yang masih pending, jika ada maka order akan diantar dan statusnya diubah menjadi delivered.
 - Tuliskan log dari proses `delivery_agent` dengan memanggil fungsi penulisan log
 - Buat 3 thread berbeda untuk dapat menjalankan agent express A, B, C dalam thread yang berbeda
+
+Log pengiriman express :
+
+
+![auto delivery log](assets/auto%20delivery%20log.png)
   
 ## c. Pengiriman Bertipe Reguler
 Berbeda dengan Express, untuk order bertipe Reguler, pengiriman dilakukan secara manual oleh user.
@@ -304,6 +343,11 @@ if (strcmp(argv[1], "-deliver") == 0) {
 - Jika ditemukan kecocokan, maka order akan dikirim (delivered) dan akan mengambil nilai agen mana yang mengirimkan order tersebut.
 - Memanggil fungi tulis log aktivitas untuk mencatat aktivitas program sesuai dengan data yang ada.
 
+Output : 
+
+
+![antar manual](assets/antar%20manual.png)
+
 ## d. Mengecek Status Pesanan
 Mengecek Status Pesanan
 Dispatcher juga harus bisa mengecek status setiap pesanan.
@@ -326,6 +370,17 @@ else if (strcmp(argv[1], "-status") == 0) {
 - Melakukan pengecekan apakah nama input sesuai dengan data order
 - Jika sesuai, akan melakukan printout status order berupa nama, status pengiriman, dan nama agen
 
+Status Express :
+
+
+![status express](assets/status%20express.png)
+
+Status Manual :
+
+
+![status manual](assets/status%20manual.png)
+
+
 ## e. Melihat Daftar Semua Pesanan
 Untuk memudahkan monitoring, program dispatcher bisa menjalankan perintah list untuk melihat semua order disertai nama dan statusnya.
 Penggunaan:
@@ -345,6 +400,17 @@ else if (strcmp(argv[1], "-list") == 0) {
 - Jalankan perintah `./dispatcher -list`
 - Melakukan perulangan untuk menampilkan data order
 - Data yang ditampilkan berupa nama, jenis, dan status order
+
+Output list:
+
+
+![dispatcher list](assets/dispatcher%20list.png)
+
+Output log express dan reguler :
+
+
+![full delivery log](assets/full%20delivery%20log.png)
+
 
 
 # Soal 3
