@@ -31,14 +31,14 @@
 
  
 ### Soal 3
-- [a. Entering the Dungeon]
-- [b.Sightseeing]
-- [c.Status Check]
-- [d.Weapon Shop]
-- [e.Handy Inventory]
-- [f.Enemy Encounter]
-- [g.Other Battle Logic]
-- [h.Error Handling]
+- a. Entering the Dungeon
+- b.Sightseeing
+- c.Status Check
+- d.Weapon Shop
+- e.Handy Inventory
+- f.Enemy Encounter
+- g.Other Battle Logic
+- h.Error Handling
 
  
 ### Soal 4
